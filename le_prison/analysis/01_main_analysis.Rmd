@@ -1,0 +1,162 @@
+---
+title: "Main Analysis: Prison's County-Level Effect on Life Expectancy"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_knit$set(root.dir = '~/econprojects/le_prison', echo = TRUE)
+```
+
+```{r config, echo = F}
+# Config and Load Data
+suppressPackageStartupMessages(library("plyr"))
+suppressPackageStartupMessages(library("sandwich"))
+suppressPackageStartupMessages(library("lmtest"))
+suppressPackageStartupMessages(library("AER"))
+suppressPackageStartupMessages(library("broom"))
+
+df_elect <- read.csv("data/input/election_county2016.csv", header = T)
+df_le14 <- read.csv("data/input/le_county2014.csv", header = T)
+```
+
+```{r prep, echo = T}
+# Update Data set with 2014 life expectancy.
+
+## Clean le14 by coverting "75.67 (75.15, 76.18)"" to "75.67".
+## N.B. Transposes (i.e. vectorizes) 1st row of data.frame of the 1st elements created from spliting le14_raw up by " ".
+df_le14$le14 <- as.numeric(t(as.data.frame(
+  strsplit(as.character(df_le14$le14_raw), " "
+           )
+  )[1, ]))
+
+## Drop county and le14_raw.
+df_le14 <- df_le14[!colnames(df_le14) %in% c("county", "le14_raw")]
+
+## Hard Code Oglala County, SD as Shannon County, SD (its pre2015 name).
+df_le14$combined_fips[df_le14$combined_fips == 46102] <- 46113
+
+# Join
+df <-
+plyr::join(df_elect, df_le14, by = "combined_fips", type = "left")
+
+# Summary Stats
+summary(df$le14)
+summary(df$le10)
+max(abs(df$le14 - df$le10))
+cor(df$le14, df$le10)
+
+# Export
+write.csv(df, "data/output/election_county2016_v2.csv", row.names = F)
+```
+
+
+``` {r reg, echo = T}
+# Run OLS and IV Models.
+## Drop 685 Counties without incomplete data.
+sum(is.na(df$prison14) | is.na(df$unemp))
+df <- df[!is.na(df$prison14) & !is.na(df$unemp), ]
+
+## Base OLS
+ols_le <- glm(
+  le14 ~ prison14 + rel_evan + rel_lds  + ed_highschool + ed_some_college +
+    ed_associates + ed_college + ed_grad + race_black + race_hispanic +
+    race_aapi + race_mixed + race_native_american + race_other +
+    race_diversity + born_instate + born_outstate + born_outus +
+    pop_growth + log(pop_density) + poverty  + unemp + gini12 +
+    uninsured + uninsur_growth + disability + obese11 + exer_suf11 +
+    exer_insuf11 + alch_heavy + alch_light + smoke_daily + smoke_nondaily +
+    mort_injury + overdose14 + vcr14 + pcr14 + female + age_child +
+    age_18t24 + age_retiree + wkid_cmarried15 + wkid_sfather15 +
+    wkid_smother15 + wokid_married15 + as.factor(state),
+  data = df
+  )
+
+ols_pr <- glm(
+   prison14 ~ le14 + rel_evan + rel_lds  + ed_highschool + ed_some_college +
+   ed_associates + ed_college + ed_grad + race_black + race_hispanic +
+   race_aapi + race_mixed + race_native_american + race_other +
+   race_diversity + born_instate + born_outstate + born_outus +
+   pop_growth + log(pop_density) + poverty  + unemp + gini12 +
+   uninsured + uninsur_growth + disability + obese11 + exer_suf11 +
+   exer_insuf11 + alch_heavy + alch_light + smoke_daily + smoke_nondaily +
+   mort_injury + overdose14 + vcr14 + pcr14 + female + age_child +
+   age_18t24 + age_retiree + wkid_cmarried15 + wkid_sfather15 +
+   wkid_smother15 + wokid_married15 + as.factor(state),
+  data = df
+  )
+
+
+## IVREG: prison ~ le14; ed as IV.
+iv_pr <- AER::ivreg(
+    prison14 ~ le14 + rel_evan  + rel_lds + race_black + race_hispanic + 
+    race_aapi + race_mixed + race_native_american + race_other + 
+    race_diversity + born_instate +  born_outstate + born_outus +
+    pop_growth + log(pop_density) + poverty + unemp + gini12 + uninsured + 
+    uninsur_growth + disability + obese11 + exer_suf11 + exer_insuf11 +
+    alch_heavy + alch_light + smoke_daily + smoke_nondaily + mort_injury +
+    overdose14 + vcr14 + pcr14 + female + age_child + age_18t24 +
+    age_retiree + wkid_cmarried15 + wkid_sfather15 + wkid_smother15 +
+    wokid_married15 + as.factor(state) | 
+     . - le14 + ed_highschool + ed_some_college + ed_associates +
+     ed_college + ed_grad,
+   data = df
+   )
+
+## IVREG: le14 ~ prison; religion as IV.
+iv_le <- AER::ivreg(
+     le14 ~ prison14 + rel_lds + ed_highschool + ed_some_college +     
+     ed_associates + ed_college + ed_grad + race_black + race_hispanic +
+     race_aapi + race_mixed + race_native_american + race_other +
+     race_diversity + born_instate + born_outstate + born_outus +
+     pop_growth + log(pop_density15) + poverty + unemp + gini12 +
+     uninsured + uninsur_growth + disability + obese11 + exer_suf11 +
+     exer_insuf11 + alch_heavy + alch_light + smoke_daily +
+     smoke_nondaily + mort_injury + overdose14 + vcr14 + pcr14 + female +
+     age_child + age_18t24 + age_retiree + wkid_cmarried15 +
+     wkid_sfather15 + wkid_smother15 + wokid_married15  +
+     as.factor(state) |
+      . - prisonrate + rel_evan,
+    data = df
+    )
+```
+
+``` {r tests, echo = F}
+# Create and Export Regression Tests
+
+# OLS
+table_pr <- broom::tidy(lmtest::coeftest(ols_pr, sandwich::vcovHC(ols_pr)))
+table_le <- broom::tidy(lmtest::coeftest(ols_le, sandwich::vcovHC(ols_le)))
+
+# IV 
+table_ivpr <- broom::tidy(lmtest::coeftest(iv_pr, sandwich::vcovHC(iv_pr)))
+table_ivle <- broom::tidy(lmtest::coeftest(iv_le, sandwich::vcovHC(iv_le)))
+
+# Export Main Results Table
+## Save 4 Regression Tables as a list.
+reg_tables <- mget(ls()[8:11])
+
+## Loop through list and export each table as a csv.
+invisible(lapply(seq_along(reg_tables),
+       function(i) write.csv(reg_tables[[i]], 
+                             paste0("data/output/tables/", 
+                                    names(reg_tables)[i],".csv"),
+                             row.names = FALSE
+                             )
+       ))
+```
+
+``` {r results, echo = T}
+# Call Results
+
+## Test OLS regs with HC3 robust SE.
+### N.B. Re instrument validity: ed sig. in ols_le but not ols_pr &
+### rel_evan sig. in ols_pr but not ols_le.
+lmtest::coeftest(ols_le, sandwich::vcovHC(ols_le))
+lmtest::coeftest(ols_pr, sandwich::vcovHC(ols_pr))
+                 
+## Test if Var of Interest is Correlated in IV method.
+### Direction Flows prison -> le but not reverse
+### N.B. Similar effect size for prison14 for iv and ols.                 
+lmtest::coeftest(iv_pr, sandwich::vcovHC(iv_pr))
+lmtest::coeftest(iv_le, sandwich::vcovHC(iv_le))
+```
