@@ -170,8 +170,7 @@ ols_le &lt;- glm(
     mort_injury + overdose14 + vcr14 + pcr14 + female + age_child +
     age_18t24 + age_retiree + wkid_cmarried15 + wkid_sfather15 +
     wkid_smother15 + wokid_married15 + as.factor(state),
-  data = df
-  )
+  data = df)
 
 ols_pr &lt;- glm(
    prison14 ~ le14 + rel_evan + rel_lds  + ed_highschool + ed_some_college +
@@ -184,8 +183,7 @@ ols_pr &lt;- glm(
    mort_injury + overdose14 + vcr14 + pcr14 + female + age_child +
    age_18t24 + age_retiree + wkid_cmarried15 + wkid_sfather15 +
    wkid_smother15 + wokid_married15 + as.factor(state),
-  data = df
-  )
+  data = df)
 
 
 ## IVREG: prison ~ le14; ed as IV.
@@ -201,8 +199,7 @@ iv_pr &lt;- AER::ivreg(
     wokid_married15 + as.factor(state) | 
      . - le14 + ed_highschool + ed_some_college + ed_associates +
      ed_college + ed_grad,
-   data = df
-   )
+   data = df)
 
 ## IVREG: le14 ~ prison; religion as IV.
 iv_le &lt;- AER::ivreg(
@@ -218,8 +215,7 @@ iv_le &lt;- AER::ivreg(
      wkid_sfather15 + wkid_smother15 + wokid_married15  +
      as.factor(state) |
       . - prisonrate + rel_evan,
-    data = df
-    )</code></pre>
+    data = df)</code></pre>
 <pre class="r"><code># Call Results
 
 ## Test OLS regs with HC3 robust SE.
