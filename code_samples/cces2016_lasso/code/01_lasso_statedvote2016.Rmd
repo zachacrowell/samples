@@ -1,0 +1,219 @@
+---
+title: "CCES2016: LASSO"
+output: github_document
+---
+```{r setup, include=FALSE}
+knitr::opts_knit$set(root.dir = '~/election_surveys/data/', echo = TRUE)
+```
+
+```{r config, include=FALSE}
+# Config and Load Data
+pkgs <- c("glmnet",  "ggplot2", "ROCR", "doMC", "data.table")
+invisible(suppressPackageStartupMessages(lapply(pkgs, library, 
+                                                character.only = TRUE)))
+registerDoMC(cores=2) # for parellization
+
+df <- data.table::fread("gunzip -c cces2016_cleaned.txt.gz", 
+                        header = T, data.table = F)
+```
+
+```{r variable_prep}
+# Select Columns of Interest
+
+# Factor Vars
+x_fact <- c("inputstate", "gender", "educ", "race2", "immstat",
+           "sexuality", "trans", "marstat", "employ", "child18", "religpew",
+           "pew_bornagain", "pew_churatd", "union", "faminc", "milstat_1", 
+           "milstat_2", "milstat_3", "milstat_4", "milstat_5",
+           "investor", "unionhh", "newsint", "healthins_1",  "healthins_2",
+           "healthins_3", "healthins_4", "healthins_5", "healthins_6",
+           "phone", "internethome", "internetwork", "comptype", "C16_300_1",
+           "C16_300_2", "C16_300_3", "C16_300_4", "C16_300_5", "C16_300_6",
+           "CC16_300d_1", "CC16_300d_2", "CC16_300d_3", "CC16_300d_4", 
+           "CC16_300d_5", "CC16_302", "CC16_303", "CC16_304", "CC16_305_1",
+           "CC16_305_2", "CC16_305_1", "CC16_305_2", "CC16_305_3",
+           "CC16_305_4", "CC16_305_5", "CC16_305_6", "CC16_305_7", 
+           "CC16_305_8", "CC16_305_9", "CC16_305_10", "CC16_305_11",
+           "CC16_307", "CC16_321a", "CC16_321b", "CC16_320a", "CC16_320b", 
+           "CC16_320c", "CC16_328", "CC16_361", "hadjob",
+           "industryclass", "ownhome", "pew_prayer", "pew_religimp",
+           "CC16_335", "CC16_337_1", "CC16_337_2", "CC16_337_3", "CC16_351B", 
+           "CC16_351E", "CC16_351F", "CC16_351G", "CC16_351H", "CC16_351I", 
+           "CC16_351K", "ideo5", "CC16_320a", "CC16_332a",  "CC16_332b",
+           "CC16_332c", "CC16_332d", "CC16_332e", "CC16_332f", "CC16_330a",
+           "CC16_330b", "CC16_330d", "CC16_330e", "CC16_422c", "CC16_422d",
+           "CC16_422e", "CC16_422f", "CC16_331_1", "CC16_331_2", "CC16_331_3",
+           "CC16_331_7", "CC16_333a", "CC16_333b", "CC16_333c", "CC16_333d",
+           "CC16_425a", "CC16_418a", "edloan", "age_binned", "clinton", 
+           "CC16_326")
+
+# Numeric Vars
+x_num <- c("age", "score_antiracism", "score_proimmigration", 
+           "score_crimereform",  "score_prochoice", "score_enviro", 
+           "score_guncontrol")
+```
+
+``` {r randomization}
+# Subset to complete values and split 2/3rds of remaining to training set and
+# 1/3rd to test set
+
+df2 <- df[!is.na(df$clinton) & !is.na(df$age) &
+            !is.na(df$score_antiracism) & !is.na(df$score_crimereform) &
+            !is.na(df$score_guncontrol) & !is.na(df$score_enviro) & 
+            !is.na(df$score_prochoice) & !is.na(df$score_proimmigration), ]
+set.seed(27312)
+df2$rand <- sample(c(0,1, 2), nrow(df2), replace = T)
+df2$train <- ifelse(df2$rand > 0, 1, 0)
+
+# Create matrix of x vars, enforce factor vars, and reassign missing values.
+df_xvars <- df2[, names(df2) %in% x_fact | names(df2) %in% x_num]
+df_xvars[is.na(df_xvars)] <- '.'
+
+## Assert factor vars as such
+df_xvars[, names(df_xvars) %in% x_fact] <- lapply(df_xvars[, names(df_xvars) %in% x_fact], as.factor)
+
+# Create matrix of y vars and rename column
+df_yvar <- as.data.frame(df2[, names(df2) == "clinton"])
+df_yvar <- plyr::rename(df_yvar,
+                        c("df2[, names(df2) == \"clinton\"]" = "clinton"))
+
+# Create matrix of weights and rename colum
+df_weights <- as.data.frame(df2[, names(df2) == "commonweight_vv_post"])
+df_weights <- plyr::rename(df_weights,
+                           c("df2[, names(df2) == \"commonweight_vv_post\"]" =
+                               "weight")
+                           )
+```
+
+``` {r train_prep, include = F}
+# Split the data into train and test matricies. 
+
+## Train
+train_x <- as.data.frame(df_xvars[df2$train == 1, ])
+train_y <- as.factor(df_yvar[df2$train == 1, ])
+train_weights <- as.numeric(df_weights[df2$train == 1, ])
+
+## Test
+test_x <- as.data.frame(df_xvars[df2$train == 0, ])
+test_y <- as.factor(df_yvar[df2$train == 0, ])
+test_weights <- as.numeric(df_weights[df2$train == 0, ])
+
+# Remove everything else
+rm(list = ls()[!ls() %in% c("train_x", "train_y", "train_weights",
+                            "test_x", "test_y", "test_weights")])
+```
+
+``` {r lasso prep, include = F}
+
+# Train Matrix
+## Assert numeric vars as numeric (required from matrix generation)
+train_x$age <- as.numeric(train_x$age)
+train_x$score_antiracism <- as.numeric(train_x$score_antiracism)
+train_x$score_crimereform <- as.numeric(train_x$score_crimereform)
+train_x$score_enviro <- as.numeric(train_x$score_enviro)
+train_x$score_guncontrol <- as.numeric(train_x$score_guncontrol)
+train_x$score_prochoice <- as.numeric(train_x$score_prochoice)
+train_x$score_proimmigration <- as.numeric(train_x$score_proimmigration)
+
+## Reformat matrix and remove clinton column
+train_mat2 <- model.matrix(clinton ~ ., data = train_x)
+train_mat2 <- train_mat2[,-1]
+
+# Test Matrix
+## Assert numeric vars as numeric (required from matrix generation)
+test_x$age <- as.numeric(test_x$age)
+test_x$score_antiracism <- as.numeric(test_x$score_antiracism)
+test_x$score_crimereform <- as.numeric(test_x$score_crimereform)
+test_x$score_enviro <- as.numeric(test_x$score_enviro)
+test_x$score_guncontrol <- as.numeric(test_x$score_guncontrol)
+test_x$score_prochoice <- as.numeric(test_x$score_prochoice)
+test_x$score_proimmigration <- as.numeric(test_x$score_proimmigration)
+
+## Reformat matrix and remove clinton column
+test_mat2 <- model.matrix(clinton ~ ., data = test_x)
+test_mat2 <- test_mat2[,-1]
+```
+
+``` {r lasso}
+
+# Create series of fits for varying lambda values used in 
+# cost function for regulatization (N.B. the slowest step in script)
+cv_out <- cv.glmnet(x = train_mat2, y = train_y, weights = train_weights,
+               family = "binomial", type.measure = "class", alpha = 1,
+               nlambda  = 100, parallel = TRUE)
+
+# PLot cv_out (i.e. misclassification errors across lambda values)
+plot(cv_out)
+
+# Generate based on optimized cost function
+fit_train <- glmnet(x = train_mat2, y = train_y, weights = train_weights,
+               family = "binomial", alpha = cv_out$lambda.1se,
+               nlambda  = 100)
+
+# Return Beta Values for lasso regression at the regularized lambda value
+lamda_chosen <- which(cv_out$lambda == cv_out$lambda.1se)
+paste0("The chosen lambda is ", lamda_chosen, ".")
+fit_train$beta[,lamda_chosen]
+
+# Generate predicted values for test matrix
+fit_test <- predict(fit_train, type="coefficients", weights = test_weights,
+                    s=cv_out$lambda.1se, newx=test_mat2) 
+```
+
+```{r roc, echo = F} 
+# Generate RoC (area under the curve) Plot
+
+## Gen probabilities (i.e. y-hats) on test data set
+prob <- predict(fit_train, type = "response", weights = test_weights,
+                    s = cv_out$lambda.1se, newx=test_mat2) 
+
+pred <- prediction(prob, test_y)
+
+
+perf <- performance(pred, measure = "tpr", x.measure = "fpr")
+
+
+# RoC Code, using area under the curve for true and false positive rates.
+
+# Create AuC values
+auc <- performance(pred, measure = "auc")
+auc <- auc@y.values[[1]]
+
+## create data frame from values
+roc.data <- data.frame(fpr=unlist(perf@x.values),
+                       tpr=unlist(perf@y.values),
+                       model="GLM")
+
+# Plot Prep
+t1 <-theme(                              
+  plot.background = element_blank(),  panel.grid.major = element_blank(), 
+  panel.grid.minor = element_blank(), panel.border = element_blank(), 
+  panel.background = element_blank(), axis.line = element_line(size=.4)
+  ) 
+
+## Plot
+ggplot(roc.data, aes(x=fpr, ymin=0, ymax=tpr)) +
+    geom_ribbon(alpha=0.2) +
+    geom_line(aes(y=tpr)) +
+    ggtitle(paste0("ROC Curve w/ AUC=", auc)) + t1
+```
+
+``` {r accuracy, echo = F}
+# Overall Accuracy
+
+# Assign probabilites (y-hats) to binary outcome (i.e. voted Clinton or Trump)
+test2 <- ifelse(prob >= .5, 1, 0)
+
+# Create DataFrame w predicted values, actual values, and weights
+test3 <- as.data.frame(cbind(as.numeric(test2), as.numeric(test_y)-1, as.numeric(test_weights)))
+
+# Add dummy for correct predicition
+test3$correct <- ifelse(test3$V1 == test3$V2, 1, 0)
+
+# Accuracy Weighted to Voting Pop (Percent Correct * Weghts/ Sum Weights)
+acc <- round((sum(test3$correct*test3$V3))/sum(test3$V3),3)
+
+# Print Accuracy 
+"Print Weighted Accuracy"
+acc 
+```
