@@ -1,0 +1,447 @@
+---
+title: '2016 CCESS: Dem Primary'
+author: "Zach Crowell"
+date: "01/01/2019"
+output: github_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r config, include=FALSE}
+library(data.table)
+library(dplyr)
+library(caret)
+library(pROC)
+library(WeightedROC)
+library(survey)
+library(ggplot2)
+library(RColorBrewer)
+library(Hmisc)
+#library(plotrix)
+```
+
+```{r data_load}
+df <- data.table::fread('gunzip -c ~/Downloads/CCES16_Common_OUTPUT_Feb2018_VV.txt.gz', data.table = F)
+# Data Source (2018-02-10): https://dataverse.harvard.edu/dataset.xhtml?persistentId=doi%3A10.7910/DVN/GDF6Z0
+```
+
+```{r data_subset, echo=FALSE}
+df1 <- df[df$CC16_328 < 3 & df$CL_E2016PPVM != "" & !is.na(df$CC16_328) & !is.na(df$commonweight_vv_post), ]
+df1$sanders <- ifelse(df1$CC16_328 == 2, 1, 0)
+df1$sanders <- as.factor(df1$sanders)
+table(df1$sanders, useNA = 'always')
+```
+
+```{r new_vars, echo = F}
+# Create New Vars
+
+## Race
+df1$race2[df1$race == 1 & (df1$hispanic == 2 | is.na(df1$hispanic))] <- "white"
+df1$race2[df1$race == 2 & (df1$hispanic == 2 | is.na(df1$hispanic))] <- "black"
+df1$race2[df1$race == 3 | df1$hispanic == 1] <- "latino"
+df1$race2[df1$race == 4 & (df1$hispanic == 2 | is.na(df1$hispanic))] <- "asian"
+df1$race2[df1$race == 5 & (df1$hispanic == 2 | is.na(df1$hispanic))] <- "native_american"
+df1$race2[df1$race == 8 & (df1$hispanic == 2 | is.na(df1$hispanic))] <- "middle_eastern"
+df1$race2[df1$race == 6 & (df1$hispanic == 2 | is.na(df1$hispanic))] <- "mixed"
+df1$race2[df1$race == 7 & (df1$hispanic == 2 | is.na(df1$hispanic))] <- "other"
+df1$race2 <- as.factor(df1$race2)
+
+## Binned Age
+df1$age <- (2016-as.numeric(df1$birthyr))
+
+df1$age_binned <- NA
+df1$age_binned[df1$age < 30] <- "18-29"
+df1$age_binned[df1$age > 30 & df1$age < 40] <- "30-39"
+df1$age_binned[df1$age > 40 & df1$age < 50] <- "40-49"
+df1$age_binned[df1$age > 50 & df1$age < 65] <- "50-64"
+df1$age_binned[df1$age > 65] <- "65"
+df1$age_binned <- as.factor(df1$age_binned)
+
+# Average Z Scores for Policy Qs
+ ### Prep: weighted z-score
+wtd_zscore <- function(x, w){
+  (x - Hmisc::wtd.mean(x, w, na.rm = T))/sqrt(Hmisc::wtd.var(x, w, na.rm = T))
+}
+
+## Mean Racial Resentment Score
+df1$CC16_422c[df1$CC16_422c == 6] <- NA
+df1$CC16_422e[df1$CC16_422e == 6] <- NA
+df1$CC16_422f[df1$CC16_422f == 6] <- NA
+df1$r1_z <- wtd_zscore(df1$CC16_422c, df1$commonweight_vv_vv)
+df1$r1_z[is.na(df1$r1_z)] <- 0
+df1$r2_z <- wtd_zscore(df1$CC16_422d, df1$commonweight_vv_vv)
+df1$r2_z[is.na(df1$r2_z)] <- 0
+df1$r3_z <- wtd_zscore(df1$CC16_422e, df1$commonweight_vv_vv)
+df1$r3_z[is.na(df1$r3_z)] <- 0
+df1$r4_z <- wtd_zscore(df1$CC16_422f, df1$commonweight_vv_vv)
+df1$r4_z[is.na(df1$r4_z)] <- 0
+
+df1$score_antiracism <- (-1*df1$r1_z - df1$r2_z + df1$r3_z + df1$r4_z)/
+(as.numeric(!is.na(df1$CC16_422c)) + as.numeric(!is.na(df1$CC16_422d)) +
+   as.numeric(!is.na(df1$CC16_422e)) + as.numeric(!is.na(df1$CC16_422f)))
+
+# Mean Gun Control Score
+df1$CC16_330d[df1$CC16_330d == 9] <- NA
+
+df1$g1_z <- wtd_zscore(df1$CC16_330a, df1$commonweight_vv)
+df1$g1_z[is.na(df1$g1_z)] <- 0
+df1$g2_z <- wtd_zscore(df1$CC16_330b, df1$commonweight_vv)
+df1$g2_z[is.na(df1$g2_z)] <- 0
+df1$g3_z <- wtd_zscore(df1$CC16_330d, df1$commonweight_vv)
+df1$g3_z[is.na(df1$g3_z)] <- 0
+df1$g4_z <- wtd_zscore(df1$CC16_330e, df1$commonweight_vv)
+df1$g4_z[is.na(df1$g4_z)] <- 0
+
+df1$score_guncontrol <- (-1*df1$g1_z + df1$g2_z - df1$g3_z + df1$g4_z)/
+  (as.numeric(!is.na(df1$CC16_330a)) + as.numeric(!is.na(df1$CC16_330b)) +
+     as.numeric(!is.na(df1$CC16_330d)) + as.numeric(!is.na(df1$CC16_330e)))
+
+## Mean Abortion Score
+df1$a1_z <- wtd_zscore(df1$CC16_332a, df1$commonweight_vv)
+df1$a1_z[is.na(df1$a1_z)] <- 0
+df1$a2_z <- wtd_zscore(df1$CC16_332b, df1$commonweight_vv)
+df1$a2_z[is.na(df1$a2_z)] <- 0
+df1$a3_z <- wtd_zscore(df1$CC16_332c, df1$commonweight_vv)
+df1$a3_z[is.na(df1$a3_z)] <- 0
+df1$a4_z <- wtd_zscore(df1$CC16_332d, df1$commonweight_vv)
+df1$a4_z[is.na(df1$a4_z)] <- 0
+df1$a5_z <- wtd_zscore(df1$CC16_332e, df1$commonweight_vv)
+df1$a5_z[is.na(df1$a5_z)] <- 0
+df1$a6_z <- wtd_zscore(df1$CC16_332f, df1$commonweight_vv)
+df1$a6_z[is.na(df1$a6_z)] <- 0
+
+df1$score_prochoice <- (-1*df1$a1_z + df1$a2_z + df1$a3_z + df1$a4_z + df1$a5_z +
+                          df1$a6_z)/(as.numeric(!is.na(df1$CC16_332a)) +
+                                      as.numeric(!is.na(df1$CC16_332b)) +
+     as.numeric(!is.na(df1$CC16_332c)) + as.numeric(!is.na(df1$CC16_332d)) +
+  as.numeric(!is.na(df1$CC16_332e)) + as.numeric(!is.na(df1$CC16_332f)))
+
+## Mean Immigration Score
+df1$i1_z <- wtd_zscore(df1$CC16_331_1, df1$commonweight_vv)
+df1$i1_z[is.na(df1$i1_z)] <- 0
+df1$i2_z <- wtd_zscore(df1$CC16_331_2, df1$commonweight_vv)
+df1$i2_z[is.na(df1$i2_z)] <- 0
+df1$i3_z <- wtd_zscore(df1$CC16_331_3, df1$commonweight_vv)
+df1$i3_z[is.na(df1$i3_z)] <- 0
+df1$i4_z <- wtd_zscore(df1$CC16_331_4, df1$commonweight_vv)
+df1$i4_z[is.na(df1$i4_z)] <- 0
+df1$i5_z <- wtd_zscore(df1$CC16_331_5, df1$commonweight_vv)
+df1$i5_z[is.na(df1$i5_z)] <- 0
+df1$i6_z <- wtd_zscore(df1$CC16_331_6, df1$commonweight_vv)
+df1$i6_z[is.na(df1$i6_z)] <- 0
+df1$i7_z <- wtd_zscore(df1$CC16_331_7, df1$commonweight_vv)
+df1$i7_z[is.na(df1$i7_z)] <- 0
+df1$i8_z <- wtd_zscore(df1$CC16_331_8, df1$commonweight_vv)
+df1$i8_z[is.na(df1$i8_z)] <- 0
+
+df1$score_proimmigration <- (-1*df1$i1_z + df1$i2_z - df1$i3_z +
+                            df1$i4_z + df1$i5_z - df1$i6_z +  df1$i7_z
+                            + df1$i8_z)/
+  (as.numeric(!is.na(df1$CC16_331_1)) + as.numeric(!is.na(df1$CC16_331_2)) +
+     as.numeric(!is.na(df1$CC16_331_3)) +
+     as.numeric(!is.na(df1$CC16_331_4)) +
+     as.numeric(!is.na(df1$CC16_331_5)) +
+     as.numeric(!is.na(df1$CC16_331_6)) +
+     as.numeric(!is.na(df1$CC16_331_7)) +
+ as.numeric(!is.na(df1$CC16_331_8)))
+
+## Mean Enviro Score
+df1$CC16_333d[df1$CC16_333d == 5] <- NA
+df1$e1_z <- wtd_zscore(df1$CC16_333a, df1$commonweight_vv)
+df1$e1_z[is.na(df1$e1_z)] <- 0
+df1$e2_z <- wtd_zscore(df1$CC16_333b, df1$commonweight_vv)
+df1$e2_z[is.na(df1$e2_z)] <- 0
+df1$e3_z <- wtd_zscore(df1$CC16_333c, df1$commonweight_vv)
+df1$e3_z[is.na(df1$e3_z)] <- 0
+df1$e4_z <- wtd_zscore(df1$CC16_333d, df1$commonweight_vv)
+df1$e4_z[is.na(df1$e4_z)] <- 0
+
+df1$score_enviro <- (-1*(df1$e1_z + df1$e2_z - df1$e3_z + df1$e4_z))/
+  (as.numeric(!is.na(df1$CC16_333a)) + as.numeric(!is.na(df1$CC16_333b)) +
+     as.numeric(!is.na(df1$CC16_333c)) + as.numeric(!is.na(df1$CC16_333d)))
+
+## Mean Crime Reform Score
+df1$c1_z <- wtd_zscore(df1$CC16_334a, df1$commonweight_vv)
+df1$c1_z[is.na(df1$c1_z)] <- 0
+df1$c2_z <- wtd_zscore(df1$CC16_334b, df1$commonweight_vv)
+df1$c2_z[is.na(df1$c2_z)] <- 0
+df1$c3_z <- wtd_zscore(df1$CC16_334c, df1$commonweight_vv)
+df1$c3_z[is.na(df1$c3_z)] <- 0
+df1$c4_z <- wtd_zscore(df1$CC16_334d, df1$commonweight_vv)
+df1$c4_z[is.na(df1$c4_z)] <- 0
+
+df1$score_crimereform <- (-1*df1$c1_z - df1$c2_z + df1$c3_z + df1$c4_z)/
+  (as.numeric(!is.na(df1$CC16_334a)) + as.numeric(!is.na(df1$CC16_334b)) +
+     as.numeric(!is.na(df1$CC16_334c)) + as.numeric(!is.na(df1$CC16_334d)))
+
+# Syria: 312
+df1$s1_z <- wtd_zscore(df1$CC16_312_1, df1$commonweight_vv)
+df1$s1_z[is.na(df1$s1_z)] <- 0
+df1$s2_z <- wtd_zscore(df1$CC16_312_2, df1$commonweight_vv)
+df1$s2_z[is.na(df1$s2_z)] <- 0
+df1$s3_z <- wtd_zscore(df1$CC16_312_3, df1$commonweight_vv)
+df1$s3_z[is.na(df1$s3_z)] <- 0
+df1$s4_z <- wtd_zscore(df1$CC16_312_4, df1$commonweight_vv)
+df1$s4_z[is.na(df1$s4_z)] <- 0
+df1$s5_z <- wtd_zscore(df1$CC16_312_5, df1$commonweight_vv)
+df1$s5_z[is.na(df1$s5_z)] <- 0
+df1$s6_z <- wtd_zscore(df1$CC16_312_6, df1$commonweight_vv)
+df1$s6_z[is.na(df1$s6_z)] <- 0
+df1$s7_z <- wtd_zscore(df1$CC16_312_7, df1$commonweight_vv)
+df1$s7_z[is.na(df1$s7_z)] <- 0
+
+df1$score_isil_antiinvolv <- (-1*df1$s1_z + df1$s2_z + df1$s3_z +
+                            df1$s4_z + df1$s5_z + df1$s6_z +  df1$s7_z
+                            )/
+  (as.numeric(!is.na(df1$CC16_312_1)) + as.numeric(!is.na(df1$CC16_312_2)) +
+     as.numeric(!is.na(df1$CC16_312_3)) +
+     as.numeric(!is.na(df1$CC16_312_4)) +
+     as.numeric(!is.na(df1$CC16_312_5)) +
+     as.numeric(!is.na(df1$CC16_312_6)) +
+     as.numeric(!is.na(df1$CC16_312_7)))
+
+# Military: 414
+df1$m1_z <- wtd_zscore(df1$CC16_414_1, df1$commonweight_vv)
+df1$m1_z[is.na(df1$m1_z)] <- 0
+df1$m2_z <- wtd_zscore(df1$CC16_414_2, df1$commonweight_vv)
+df1$m2_z[is.na(df1$m2_z)] <- 0
+df1$m3_z <- wtd_zscore(df1$CC16_414_3, df1$commonweight_vv)
+df1$m3_z[is.na(df1$m3_z)] <- 0
+df1$m4_z <- wtd_zscore(df1$CC16_414_4, df1$commonweight_vv)
+df1$m4_z[is.na(df1$m4_z)] <- 0
+df1$m5_z <- wtd_zscore(df1$CC16_414_5, df1$commonweight_vv)
+df1$m5_z[is.na(df1$m5_z)] <- 0
+df1$m6_z <- wtd_zscore(df1$CC16_414_6, df1$commonweight_vv)
+df1$m6_z[is.na(df1$m6_z)] <- 0
+df1$m7_z <- wtd_zscore(df1$CC16_414_7, df1$commonweight_vv)
+df1$m7_z[is.na(df1$m7_z)] <- 0
+
+df1$score_antiwar <- (1*df1$m1_z + df1$m2_z + df1$m3_z +
+                            df1$m4_z + df1$m5_z + df1$m6_z -  df1$m7_z
+                            )/
+  (as.numeric(!is.na(df1$CC16_414_1)) + as.numeric(!is.na(df1$CC16_414_2)) +
+     as.numeric(!is.na(df1$CC16_414_3)) +
+     as.numeric(!is.na(df1$CC16_414_4)) +
+     as.numeric(!is.na(df1$CC16_414_5)) +
+     as.numeric(!is.na(df1$CC16_414_6)) +
+     as.numeric(!is.na(df1$CC16_414_7)))
+```
+
+```{r feature_prep, echo = F}
+# Manual Feature Selection: Removing vars that have 
+# too many nulls, redundant, nongeneralizable/national, or post-primary.
+cols <- colnames(df1[, c(77:79, 81:88, 122:184, 188:189, 193:227, 240:251, 
+                         276:280, 282:285, 287:294, 336:341, 344:360, 469:475, 
+                         478:483,527:530, 548, 564:567,
+                         572, 577, 584, 593, 598, 611, 619)])
+df2 <- df1[, colnames(df1) %in% cols]
+
+# Remove Free-Form Qs (i.e. character vars)
+df2 <- df2[sapply(df2, function(x) !is.character(x))]
+
+# Defunct
+# classes <- sapply(df2, function(x) class(x))
+#df2[,c(1:169, 171:187, 189:208, 211:226, 231:263)] <- 
+#  df2[, c(1:170, 172:190, 192:211, 214:229, 231:263)] %>% lapply(function(x) as.factor(x))
+# nonvar <- df2[, sapply(df2, function(x) nlevels(x) < 1 & is.factor(x) == T)] %>% colnames(.)
+#df2[, colnames(df2) %in% nonvar] <- NULL
+
+
+# Code NA Children to 0 for simplicity. 
+df2$nacount_child18num <- ifelse(is.na(df2$child18num), 1, 0)
+df2$child18num[is.na(df2$child18num)] <- 0
+
+# Remove fields with more than 1000 missing values in training set. 
+nonvar <- df2[, sapply(df2, function(x) sum(is.na(x)) > 1000)] %>% colnames(.)
+df2[, colnames(df2) %in% nonvar] <- NULL
+
+# Check
+#df2 %>% sapply(., function(x) sum(is.na(x)))
+
+# Remove Race & Hispanic as they add no predictive power to race2.
+df2$race <- NULL
+df2$hispanic <- NULL
+
+# Prep yvar, xvars, and weights for GBM
+xvars <- df2[, colnames(df2) != 'sanders']
+yvar <- as.factor(df2$sanders)
+levels <- unique(yvar)
+yvar <- factor(yvar, labels=make.names(levels))
+
+# Defunct
+# Combine into 1 df
+df3 <- cbind(xvars, yvar, df1$commonweight_vv)
+df3$commonweight_vv <- df3$`df1$commonweight_vv`
+df3$`df1$commonweight_vv` <- NULL
+print("Feature Prep Excluded from HTML")
+```
+
+# GBM
+``` {r gbm}
+# Primarily using defulats, 1 cv (as it drops more marginal features),
+# and commonweight_vv base on previous runs
+set.seed(643)
+ gbm1 <- caret::train(xvars, yvar, distribution="bernoulli", method="gbm",
+                      weights = df1$commonweight_vv,
+                      trControl = trainControl(method = 'cv',  number = 1,
+                                               returnResamp ='none',
+                                               summaryFunction = twoClassSummary,
+                                               classProbs = TRUE),
+                      metric = 'ROC',
+                      preProc = c("center", "scale")
+                      )
+
+# genearte summary stats
+predx <- predict(object=gbm1, df2, type='raw', weight = df1$commonweight_vv_post)
+#auc <- roc(ifelse(yvar=="X1",1,0), ifelse(predx=="X1",1,0))
+wroc <- WeightedROC(ifelse(predx=="X1",1,0), ifelse(yvar=="X1",1,0), df1$commonweight_vv_post)
+wauc <- WeightedAUC(wroc)
+
+# Summarize
+## Rel Influence
+summary(gbm1)
+## ACC
+print(postResample(pred=predx, obs=yvar))
+## AUC & WAUC
+#print(auc$auc)
+print(wauc)
+```
+
+# Logit
+# Running a Logit to precent intelligble coef direction & magnitudes
+```{r logit, echo=FALSE}
+# Running a Logit to precent intelligble coef direction & magnitudes
+#using survey package to handle survey weights
+
+# GBM Results:
+# CC16_351B                       CC16_351B 18.631129
+# age                                   age 16.509180
+# pid7                                 pid7 15.375841
+# pid3                                 pid3 11.781791
+# CC16_320a                       CC16_320a 11.047525
+# CC16_304                         CC16_304  5.408564
+# religpew                         religpew  4.519347
+# ideo5                               ideo5  3.958978
+# CC16_337_1                     CC16_337_1  3.477195
+# CC16_326                         CC16_326  3.180352
+# race2                               race2  2.221212
+# CC16_334c                       CC16_334c  2.205855
+# CC16_300_2                     CC16_300_2  1.683032
+# 
+# CC16_300_5                     CC16_300_5  0.7091162
+# 
+# educ                                 educ  1.84469486
+# faminc                             faminc  1.25033036
+# score_antiwar
+
+# Prep Vars for to be more regression friendly
+df1$age2 <- df1$age^2
+df1$CC16_351B[is.na(df1$CC16_351B)] <- "99"
+df1$CC16_337_1[is.na(df1$CC16_337_1)] <- "99"
+df1$pid7[is.na(df1$pid7)] <- "99"
+df1$pid3[is.na(df1$pid3)] <- "99"
+df1$ideo5[is.na(df1$ideo5)] <- "99"
+df1$CC16_320a[is.na(df1$CC16_320a)] <- "99"
+df1$CC16_326[is.na(df1$CC16_326)] <- "99"
+df1$CC16_304[is.na(df1$CC16_304)] <- "99"
+df1$religpew[is.na(df1$religpew)] <- "99"
+df1$educ[is.na(df1$educ)] <- "99"
+df1$inputstate[is.na(df1$inputstate)] <- "99"
+df1$CC16_300_2[is.na(df1$CC16_300_2)] <- "99"
+df1$CC16_300_5[is.na(df1$CC16_300_5)] <- "99"
+
+# Survey Design
+d1 <- svydesign(id = ~1, weights = ~commonweight_vv, data = df1)
+
+# Formula (with state f.e.)
+f1 <- sanders ~ as.factor(CC16_351B) +  as.factor(CC16_337_1) + score_antiwar + 
+  age + age2 +
+  as.factor(pid7) + as.factor(ideo5) + 
+  as.factor(CC16_320a) + as.factor(CC16_304) + 
+  as.factor(religpew) + factor(race2, levels=rev(levels(race2))) +
+  as.factor(CC16_300_2) + as.factor(CC16_300_5) +
+  as.factor(inputstate)
+
+# Run Logit
+lg <- survey::svyglm(formula = f1, design = d1, family = binomial)
+summary(lg)
+```
+
+# Plots
+## Plot Age to show potentially non-linear changes
+``` {r plot, echo = F}
+# Most of this is legacy code, should refactor
+df1 <- as.data.table(df1)
+df1$sanders <- ifelse(df1$CC16_328 == 2, 1, 0)
+
+# summary df 
+df1$CC16_351B <- as.numeric(df1$CC16_351B)
+df1$tpp[df1$CC16_351B == 1] <- 1
+df1$tpp[df1$CC16_351B == 2] <- 0
+
+df_age <- df1[!is.na(sanders) & !is.na(commonweight_vv),
+     list(sanders = sum(sanders*commonweight_vv),
+          clinton = sum((sanders-1)*(-1*commonweight_vv)),
+          tpp_for = sum(sanders*commonweight_vv*(tpp), na.rm = T),
+          c_for = sum((sanders-1)*(-1*commonweight_vv)*(tpp), na.rm = T),
+          tpp_against = sum(sanders*(-1*commonweight_vv)*(tpp-1), na.rm = T),
+          c_against =  sum((sanders-1)*(commonweight_vv)*(tpp-1), na.rm = T)
+          ), by = age]
+df_age <- as.data.frame(df_age)
+df1 <- as.data.frame(df1)
+
+# new vars
+df_age$sanders_share <- df_age$sanders/(df_age$sanders+df_age$clinton)
+df_age$sanders_lead <- ifelse(df_age$sanders >= df_age$clinton, 1, 0)
+df_age$n_size <- df_age$sanders+df_age$clinton
+df_age$n_size_for <- df_age$tpp_for+df_age$c_for
+df_age$n_size_against <-df_age$tpp_against+df_age$c_against
+df_age$sanders_for_tpp <- df_age$tpp_for/(df_age$tpp_for+df_age$c_for)
+df_age$sanders_against_tpp <- df_age$tpp_against/(df_age$tpp_against+df_age$c_against)
+
+# b&w theme
+t1 <-theme(                              
+  plot.background = element_blank(), 
+  panel.grid.major = element_blank(), 
+  panel.grid.minor = element_blank(), 
+  panel.border = element_blank(), 
+  panel.background = element_blank(),
+  axis.line = element_line(size=.4),
+  plot.title = element_text(hjust = 0.5))  
+
+# Plot
+ggplot(data=df_age,
+         aes(x = age, y = sanders_share, weight = n_size, size = n_size)) + t1 + 
+geom_point(alpha = .4) +
+    geom_smooth() + guides(size=FALSE) +
+  labs(title = "CCES16: Sanders Primary Share by 2016 Age",
+       y = "Weighted Vote Share", x = "Age")
+
+ggplot(data=df_age, aes(x = age, y = value, color = TPP)) + t1 + 
+  scale_color_manual(values=c("#E69F00", "#56B4E9")) +
+ geom_point(aes(y = sanders_for_tpp, col = "for", size = n_size_for), alpha = .4) +
+ geom_point(aes(y = sanders_against_tpp, col = "against", size = n_size_against), alpha = .4) +
+ geom_smooth(aes(y = sanders_for_tpp, weight = n_size_for, col = "for")) +
+  geom_smooth(aes(y = sanders_against_tpp, weight = n_size_against, col = "against")) +
+  guides(size=FALSE) +
+  labs(title = "CCES16: Sanders Primary Share \n by 2016 Age & TPP Support",
+       y = "Weighted Vote Share", x = "Age")
+
+print("Summary Stats:")
+print(paste("Average TPP Support Among Sanders voters:", round(wtd.mean(df1$tpp[df1$sanders==1], df1$commonweight_vv[df1$sanders==1]), 3)))
+print(paste("Average TPP Support Among Clinton voters:", round(wtd.mean(df1$tpp[df1$sanders==0], df1$commonweight_vv[df1$sanders==0]), 3)))
+
+# Cut Military Spend Pref
+print("Military Spending Cuts Pref by Sanders Voters: ")
+df1[df1$sanders==1 & !is.na(df1$CC16_337_1), ] %>% 
+  count(CC16_337_1, wt = commonweight_vv)
+print("Military Spending Cuts Pref by Clinton Voters: ")
+df1[df1$sanders==0 & !is.na(df1$CC16_337_1), ] %>% 
+  count(CC16_337_1, wt = commonweight_vv)
+#plotrix::weighted.hist(df1$CC16_337_1[df1$sanders==1 & !is.na(df1$CC16_337_1)], df1$commonweight_vv[df1$sanders==1 & !is.na(df1$CC16_337_1)])
+
+#plotrix::weighted.hist(df1$CC16_337_1[df1$sanders==0 & !is.na(df1$CC16_337_1)], df1$commonweight_vv[df1$sanders==0 & !is.na(df1$CC16_337_1)])
+
+```
