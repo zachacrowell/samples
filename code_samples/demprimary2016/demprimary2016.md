@@ -8,9 +8,11 @@ df <- data.table::fread('gunzip -c ~/Downloads/CCES16_Common_OUTPUT_Feb2018_VV.t
 # Data Source (2018-02-10): https://dataverse.harvard.edu/dataset.xhtml?persistentId=doi%3A10.7910/DVN/GDF6Z0
 ```
 
+    ## [1] "voted for Sanders (1) or Clinton(0)"
+
     ## 
     ##    0    1 <NA> 
-    ## 5134 4454    0
+    ## 5747 4943    0
 
     ## [1] "Feature Prep Excluded from HTML"
 
@@ -33,7 +35,7 @@ set.seed(643)
 ```
 
     ## Warning in `[<-.data.frame`(`*tmp*`, , method$center, value =
-    ## structure(list(: provided 20164 variables to replace 142 variables
+    ## structure(list(: provided 14884 variables to replace 122 variables
 
     ## Warning in preProcess.default(thresh = 0.95, k = 5, freqCut = 19, uniqueCut
     ## = 10, : Std. deviations could not be computed for: gender, educ, marstat,
@@ -55,26 +57,23 @@ set.seed(643)
     ## milstat_1, milstat_2, milstat_3, milstat_4, milstat_5, union, unionhh,
     ## newsint, faminc, investor, sexuality, trans, healthins_1, healthins_2,
     ## healthins_3, healthins_4, healthins_5, healthins_6, internethome,
-    ## internetwork, CC16_414_1, CC16_414_2, CC16_414_3, CC16_414_4, CC16_414_5,
-    ## CC16_414_6, CC16_414_7, CC16_417a_1, CC16_417a_2, CC16_417a_3, CC16_417a_4,
-    ## CC16_417a_5, CC16_417a_6, CC16_422c, CC16_422d, CC16_422e, CC16_422f,
-    ## edloan, age, score_antiracism, score_guncontrol, score_prochoice,
-    ## score_proimmigration, score_enviro, score_antiwar, nacount_child18num
+    ## internetwork, age, score_guncontrol, score_prochoice, score_proimmigration,
+    ## score_enviro, nacount_child18num
 
     ## Warning in `[<-.data.frame`(`*tmp*`, , method$scale, value =
-    ## structure(list(: provided 20164 variables to replace 142 variables
+    ## structure(list(: provided 14884 variables to replace 122 variables
 
     ## Warning in `[<-.data.frame`(`*tmp*`, , object$method$center, value =
-    ## structure(list(: provided 20164 variables to replace 142 variables
+    ## structure(list(: provided 14884 variables to replace 122 variables
 
     ## Warning in `[<-.data.frame`(`*tmp*`, , object$method$scale, value =
-    ## structure(list(: provided 20164 variables to replace 142 variables
+    ## structure(list(: provided 14884 variables to replace 122 variables
 
     ## Warning: model fit failed for Fold1: shrinkage=0.1, interaction.depth=1, n.minobsinnode=10, n.trees=150 Error in (function (x, y, offset = NULL, misc = NULL, distribution = "bernoulli",  : 
     ##   The data set is too small or the subsampling rate is too large: `nTrain * bag.fraction <= n.minobsinnode`
 
     ## Warning in `[<-.data.frame`(`*tmp*`, , method$center, value =
-    ## structure(list(: provided 20164 variables to replace 142 variables
+    ## structure(list(: provided 14884 variables to replace 122 variables
 
     ## Warning in preProcess.default(thresh = 0.95, k = 5, freqCut = 19, uniqueCut
     ## = 10, : Std. deviations could not be computed for: gender, educ, marstat,
@@ -96,26 +95,23 @@ set.seed(643)
     ## milstat_1, milstat_2, milstat_3, milstat_4, milstat_5, union, unionhh,
     ## newsint, faminc, investor, sexuality, trans, healthins_1, healthins_2,
     ## healthins_3, healthins_4, healthins_5, healthins_6, internethome,
-    ## internetwork, CC16_414_1, CC16_414_2, CC16_414_3, CC16_414_4, CC16_414_5,
-    ## CC16_414_6, CC16_414_7, CC16_417a_1, CC16_417a_2, CC16_417a_3, CC16_417a_4,
-    ## CC16_417a_5, CC16_417a_6, CC16_422c, CC16_422d, CC16_422e, CC16_422f,
-    ## edloan, age, score_antiracism, score_guncontrol, score_prochoice,
-    ## score_proimmigration, score_enviro, score_antiwar, nacount_child18num
+    ## internetwork, age, score_guncontrol, score_prochoice, score_proimmigration,
+    ## score_enviro, nacount_child18num
 
     ## Warning in `[<-.data.frame`(`*tmp*`, , method$scale, value =
-    ## structure(list(: provided 20164 variables to replace 142 variables
+    ## structure(list(: provided 14884 variables to replace 122 variables
 
     ## Warning in `[<-.data.frame`(`*tmp*`, , object$method$center, value =
-    ## structure(list(: provided 20164 variables to replace 142 variables
+    ## structure(list(: provided 14884 variables to replace 122 variables
 
     ## Warning in `[<-.data.frame`(`*tmp*`, , object$method$scale, value =
-    ## structure(list(: provided 20164 variables to replace 142 variables
+    ## structure(list(: provided 14884 variables to replace 122 variables
 
     ## Warning: model fit failed for Fold1: shrinkage=0.1, interaction.depth=2, n.minobsinnode=10, n.trees=150 Error in (function (x, y, offset = NULL, misc = NULL, distribution = "bernoulli",  : 
     ##   The data set is too small or the subsampling rate is too large: `nTrain * bag.fraction <= n.minobsinnode`
 
     ## Warning in `[<-.data.frame`(`*tmp*`, , method$center, value =
-    ## structure(list(: provided 20164 variables to replace 142 variables
+    ## structure(list(: provided 14884 variables to replace 122 variables
 
     ## Warning in preProcess.default(thresh = 0.95, k = 5, freqCut = 19, uniqueCut
     ## = 10, : Std. deviations could not be computed for: gender, educ, marstat,
@@ -137,20 +133,17 @@ set.seed(643)
     ## milstat_1, milstat_2, milstat_3, milstat_4, milstat_5, union, unionhh,
     ## newsint, faminc, investor, sexuality, trans, healthins_1, healthins_2,
     ## healthins_3, healthins_4, healthins_5, healthins_6, internethome,
-    ## internetwork, CC16_414_1, CC16_414_2, CC16_414_3, CC16_414_4, CC16_414_5,
-    ## CC16_414_6, CC16_414_7, CC16_417a_1, CC16_417a_2, CC16_417a_3, CC16_417a_4,
-    ## CC16_417a_5, CC16_417a_6, CC16_422c, CC16_422d, CC16_422e, CC16_422f,
-    ## edloan, age, score_antiracism, score_guncontrol, score_prochoice,
-    ## score_proimmigration, score_enviro, score_antiwar, nacount_child18num
+    ## internetwork, age, score_guncontrol, score_prochoice, score_proimmigration,
+    ## score_enviro, nacount_child18num
 
     ## Warning in `[<-.data.frame`(`*tmp*`, , method$scale, value =
-    ## structure(list(: provided 20164 variables to replace 142 variables
+    ## structure(list(: provided 14884 variables to replace 122 variables
 
     ## Warning in `[<-.data.frame`(`*tmp*`, , object$method$center, value =
-    ## structure(list(: provided 20164 variables to replace 142 variables
+    ## structure(list(: provided 14884 variables to replace 122 variables
 
     ## Warning in `[<-.data.frame`(`*tmp*`, , object$method$scale, value =
-    ## structure(list(: provided 20164 variables to replace 142 variables
+    ## structure(list(: provided 14884 variables to replace 122 variables
 
     ## Warning: model fit failed for Fold1: shrinkage=0.1, interaction.depth=3, n.minobsinnode=10, n.trees=150 Error in (function (x, y, offset = NULL, misc = NULL, distribution = "bernoulli",  : 
     ##   The data set is too small or the subsampling rate is too large: `nTrain * bag.fraction <= n.minobsinnode`
@@ -159,25 +152,25 @@ set.seed(643)
     ## trainInfo, : There were missing values in resampled performance measures.
 
     ## Iter   TrainDeviance   ValidDeviance   StepSize   Improve
-    ##      1        1.3581             nan     0.1000    0.0074
-    ##      2        1.3453             nan     0.1000    0.0060
-    ##      3        1.3333             nan     0.1000    0.0058
-    ##      4        1.3218             nan     0.1000    0.0059
-    ##      5        1.3116             nan     0.1000    0.0050
-    ##      6        1.3014             nan     0.1000    0.0046
-    ##      7        1.2907             nan     0.1000    0.0044
-    ##      8        1.2820             nan     0.1000    0.0034
-    ##      9        1.2741             nan     0.1000    0.0037
-    ##     10        1.2676             nan     0.1000    0.0030
-    ##     20        1.2088             nan     0.1000    0.0019
-    ##     40        1.1417             nan     0.1000    0.0010
-    ##     50        1.1205             nan     0.1000    0.0007
+    ##      1        1.3576             nan     0.1000    0.0078
+    ##      2        1.3461             nan     0.1000    0.0055
+    ##      3        1.3335             nan     0.1000    0.0063
+    ##      4        1.3212             nan     0.1000    0.0056
+    ##      5        1.3102             nan     0.1000    0.0052
+    ##      6        1.3010             nan     0.1000    0.0045
+    ##      7        1.2904             nan     0.1000    0.0048
+    ##      8        1.2823             nan     0.1000    0.0039
+    ##      9        1.2740             nan     0.1000    0.0045
+    ##     10        1.2668             nan     0.1000    0.0035
+    ##     20        1.2078             nan     0.1000    0.0018
+    ##     40        1.1392             nan     0.1000    0.0011
+    ##     50        1.1163             nan     0.1000    0.0010
 
 ``` r
 # genearte summary stats
-predx <- predict(object=gbm1, df2, type='raw', weight = df1$commonweight_vv_post)
+predx <- predict(object=gbm1, df2, type='raw', weight = df1$commonweight_vv)
 #auc <- roc(ifelse(yvar=="X1",1,0), ifelse(predx=="X1",1,0))
-wroc <- WeightedROC(ifelse(predx=="X1",1,0), ifelse(yvar=="X1",1,0), df1$commonweight_vv_post)
+wroc <- WeightedROC(ifelse(predx=="X1",1,0), ifelse(yvar=="X1",1,0), df1$commonweight_vv)
 wauc <- WeightedAUC(wroc)
 
 # Summarize
@@ -188,18 +181,18 @@ summary(gbm1)
 ![](demprimary2016_files/figure-markdown_github/gbm-1.png)
 
     ##                                       var    rel.inf
-    ## pid7                                 pid7 24.3118864
-    ## age                                   age 21.5884618
-    ## CC16_351B                       CC16_351B 18.2054080
-    ## CC16_320a                       CC16_320a  9.1061460
-    ## religpew                         religpew  6.4888652
-    ## CC16_304                         CC16_304  4.6441910
-    ## race2                               race2  4.1117781
-    ## age_binned                     age_binned  3.5070413
-    ## CC16_326                         CC16_326  2.6177522
-    ## CC16_337_1                     CC16_337_1  2.3123737
-    ## ideo5                               ideo5  2.2299941
-    ## CC16_300_5                     CC16_300_5  0.8761021
+    ## age                                   age 25.1671542
+    ## pid7                                 pid7 24.9941139
+    ## CC16_351B                       CC16_351B 16.9460882
+    ## CC16_320a                       CC16_320a  7.9955065
+    ## religpew                         religpew  6.7867098
+    ## CC16_304                         CC16_304  4.9440523
+    ## CC16_326                         CC16_326  4.4887933
+    ## race2                               race2  3.6883435
+    ## CC16_337_1                     CC16_337_1  2.0806587
+    ## CC16_300_5                     CC16_300_5  1.1225493
+    ## ideo5                               ideo5  0.9068010
+    ## CC16_334c                       CC16_334c  0.8792294
     ## gender                             gender  0.0000000
     ## educ                                 educ  0.0000000
     ## marstat                           marstat  0.0000000
@@ -262,7 +255,6 @@ summary(gbm1)
     ## CC16_333d                       CC16_333d  0.0000000
     ## CC16_334a                       CC16_334a  0.0000000
     ## CC16_334b                       CC16_334b  0.0000000
-    ## CC16_334c                       CC16_334c  0.0000000
     ## CC16_334d                       CC16_334d  0.0000000
     ## CC16_335                         CC16_335  0.0000000
     ## CC16_337_2                     CC16_337_2  0.0000000
@@ -307,30 +299,11 @@ summary(gbm1)
     ## healthins_6                   healthins_6  0.0000000
     ## internethome                 internethome  0.0000000
     ## internetwork                 internetwork  0.0000000
-    ## CC16_414_1                     CC16_414_1  0.0000000
-    ## CC16_414_2                     CC16_414_2  0.0000000
-    ## CC16_414_3                     CC16_414_3  0.0000000
-    ## CC16_414_4                     CC16_414_4  0.0000000
-    ## CC16_414_5                     CC16_414_5  0.0000000
-    ## CC16_414_6                     CC16_414_6  0.0000000
-    ## CC16_414_7                     CC16_414_7  0.0000000
-    ## CC16_417a_1                   CC16_417a_1  0.0000000
-    ## CC16_417a_2                   CC16_417a_2  0.0000000
-    ## CC16_417a_3                   CC16_417a_3  0.0000000
-    ## CC16_417a_4                   CC16_417a_4  0.0000000
-    ## CC16_417a_5                   CC16_417a_5  0.0000000
-    ## CC16_417a_6                   CC16_417a_6  0.0000000
-    ## CC16_422c                       CC16_422c  0.0000000
-    ## CC16_422d                       CC16_422d  0.0000000
-    ## CC16_422e                       CC16_422e  0.0000000
-    ## CC16_422f                       CC16_422f  0.0000000
-    ## edloan                             edloan  0.0000000
-    ## score_antiracism         score_antiracism  0.0000000
+    ## age_binned                     age_binned  0.0000000
     ## score_guncontrol         score_guncontrol  0.0000000
     ## score_prochoice           score_prochoice  0.0000000
     ## score_proimmigration score_proimmigration  0.0000000
     ## score_enviro                 score_enviro  0.0000000
-    ## score_antiwar               score_antiwar  0.0000000
     ## nacount_child18num     nacount_child18num  0.0000000
 
 ``` r
@@ -339,7 +312,7 @@ print(postResample(pred=predx, obs=yvar))
 ```
 
     ##  Accuracy     Kappa 
-    ## 0.7233000 0.4348531
+    ## 0.7231057 0.4341894
 
 ``` r
 ## AUC & WAUC
@@ -347,7 +320,7 @@ print(postResample(pred=predx, obs=yvar))
 print(wauc)
 ```
 
-    ## [1] 0.72341
+    ## [1] 0.7155769
 
 Logit
 =====
@@ -394,7 +367,7 @@ Running a Logit to precent intelligble coef direction & magnitudes
     ## as.factor(CC16_320a)3                                      7.447e-01
     ## as.factor(CC16_320a)4                                      1.611e+00
     ## as.factor(CC16_320a)5                                      1.863e-01
-    ## as.factor(CC16_320a)99                                     1.457e+01
+    ## as.factor(CC16_320a)99                                     1.458e+01
     ## as.factor(CC16_304)2                                       4.966e-01
     ## as.factor(CC16_304)3                                       9.075e-01
     ## as.factor(CC16_304)4                                       1.365e+00
@@ -412,7 +385,7 @@ Running a Logit to precent intelligble coef direction & magnitudes
     ## as.factor(religpew)7                                       6.139e-01
     ## as.factor(religpew)8                                      -9.921e-01
     ## as.factor(religpew)9                                       4.913e-01
-    ## as.factor(religpew)99                                     -1.316e+01
+    ## as.factor(religpew)99                                     -1.317e+01
     ## factor(race2, levels = rev(levels(race2)))other            1.346e-01
     ## factor(race2, levels = rev(levels(race2)))native_american -7.251e-01
     ## factor(race2, levels = rev(levels(race2)))mixed           -2.501e-01
@@ -446,7 +419,7 @@ Running a Logit to precent intelligble coef direction & magnitudes
     ## as.factor(inputstate)39                                   -7.784e-01
     ## as.factor(inputstate)4                                    -1.091e-01
     ## as.factor(inputstate)40                                    1.355e-01
-    ## as.factor(inputstate)41                                   -1.537e+01
+    ## as.factor(inputstate)41                                   -1.538e+01
     ## as.factor(inputstate)42                                   -3.342e-01
     ## as.factor(inputstate)44                                   -1.608e+00
     ## as.factor(inputstate)45                                   -1.158e+00
@@ -460,12 +433,12 @@ Running a Logit to precent intelligble coef direction & magnitudes
     ## as.factor(inputstate)54                                   -4.112e-01
     ## as.factor(inputstate)55                                   -5.778e-02
     ## as.factor(inputstate)6                                    -5.268e-01
-    ## as.factor(inputstate)8                                    -1.375e+01
+    ## as.factor(inputstate)8                                    -1.376e+01
     ## as.factor(inputstate)9                                     4.844e-02
     ##                                                           Std. Error
     ## (Intercept)                                                5.729e-01
     ## as.factor(CC16_351B)2                                      6.907e-02
-    ## as.factor(CC16_351B)99                                     5.674e-01
+    ## as.factor(CC16_351B)99                                     5.673e-01
     ## as.factor(CC16_337_1)2                                     7.185e-02
     ## as.factor(CC16_337_1)3                                     1.227e-01
     ## as.factor(CC16_337_1)99                                    2.967e-01
@@ -520,7 +493,7 @@ Running a Logit to precent intelligble coef direction & magnitudes
     ## as.factor(CC16_300_5)2                                     7.931e-02
     ## as.factor(inputstate)10                                    7.109e-01
     ## as.factor(inputstate)11                                    7.202e-01
-    ## as.factor(inputstate)12                                    4.429e-01
+    ## as.factor(inputstate)12                                    4.428e-01
     ## as.factor(inputstate)13                                    4.786e-01
     ## as.factor(inputstate)16                                    9.489e-01
     ## as.factor(inputstate)17                                    4.509e-01
@@ -533,7 +506,7 @@ Running a Logit to precent intelligble coef direction & magnitudes
     ## as.factor(inputstate)28                                    6.405e-01
     ## as.factor(inputstate)29                                    4.637e-01
     ## as.factor(inputstate)30                                    6.120e-01
-    ## as.factor(inputstate)31                                    5.728e-01
+    ## as.factor(inputstate)31                                    5.727e-01
     ## as.factor(inputstate)33                                    5.161e-01
     ## as.factor(inputstate)34                                    4.625e-01
     ## as.factor(inputstate)35                                    5.121e-01
@@ -561,10 +534,10 @@ Running a Logit to precent intelligble coef direction & magnitudes
     ##                                                           t value Pr(>|t|)
     ## (Intercept)                                                 3.256 0.001134
     ## as.factor(CC16_351B)2                                      12.506  < 2e-16
-    ## as.factor(CC16_351B)99                                     -0.242 0.808756
+    ## as.factor(CC16_351B)99                                     -0.242 0.808755
     ## as.factor(CC16_337_1)2                                     -3.672 0.000242
     ## as.factor(CC16_337_1)3                                     -3.750 0.000178
-    ## as.factor(CC16_337_1)99                                    -1.043 0.296914
+    ## as.factor(CC16_337_1)99                                    -1.043 0.296911
     ## score_antiwar                                               4.204 2.64e-05
     ## age                                                        -5.988 2.20e-09
     ## age2                                                        3.897 9.79e-05
@@ -574,8 +547,8 @@ Running a Logit to precent intelligble coef direction & magnitudes
     ## as.factor(pid7)5                                            6.644 3.22e-11
     ## as.factor(pid7)6                                            5.470 4.62e-08
     ## as.factor(pid7)7                                            2.631 0.008534
-    ## as.factor(pid7)8                                            1.713 0.086726
-    ## as.factor(pid7)99                                          -0.265 0.790691
+    ## as.factor(pid7)8                                            1.713 0.086724
+    ## as.factor(pid7)99                                          -0.265 0.790690
     ## as.factor(ideo5)2                                          -6.149 8.13e-10
     ## as.factor(ideo5)3                                          -9.655  < 2e-16
     ## as.factor(ideo5)4                                          -5.573 2.58e-08
@@ -584,76 +557,76 @@ Running a Logit to precent intelligble coef direction & magnitudes
     ## as.factor(ideo5)99                                        -18.435  < 2e-16
     ## as.factor(CC16_320a)2                                       4.150 3.35e-05
     ## as.factor(CC16_320a)3                                       4.148 3.39e-05
-    ## as.factor(CC16_320a)4                                       7.277 3.67e-13
-    ## as.factor(CC16_320a)5                                       0.705 0.480827
-    ## as.factor(CC16_320a)99                                     17.212  < 2e-16
+    ## as.factor(CC16_320a)4                                       7.278 3.67e-13
+    ## as.factor(CC16_320a)5                                       0.705 0.480824
+    ## as.factor(CC16_320a)99                                     17.217  < 2e-16
     ## as.factor(CC16_304)2                                        3.087 0.002029
     ## as.factor(CC16_304)3                                        5.411 6.42e-08
     ## as.factor(CC16_304)4                                        6.858 7.43e-12
     ## as.factor(CC16_304)5                                        3.392 0.000696
     ## as.factor(CC16_304)6                                        5.558 2.80e-08
-    ## as.factor(CC16_304)99                                       1.355 0.175469
+    ## as.factor(CC16_304)99                                       1.355 0.175466
     ## as.factor(religpew)10                                       2.659 0.007858
     ## as.factor(religpew)11                                       4.372 1.24e-05
     ## as.factor(religpew)12                                       3.978 6.99e-05
-    ## as.factor(religpew)2                                        0.555 0.578684
-    ## as.factor(religpew)3                                        1.634 0.102366
-    ## as.factor(religpew)4                                       -0.196 0.844841
-    ## as.factor(religpew)5                                        0.937 0.348729
+    ## as.factor(religpew)2                                        0.555 0.578682
+    ## as.factor(religpew)3                                        1.634 0.102364
+    ## as.factor(religpew)4                                       -0.196 0.844840
+    ## as.factor(religpew)5                                        0.937 0.348727
     ## as.factor(religpew)6                                        2.656 0.007914
-    ## as.factor(religpew)7                                        2.129 0.033239
-    ## as.factor(religpew)8                                       -1.062 0.288150
+    ## as.factor(religpew)7                                        2.130 0.033238
+    ## as.factor(religpew)8                                       -1.062 0.288147
     ## as.factor(religpew)9                                        4.364 1.29e-05
-    ## as.factor(religpew)99                                     -22.710  < 2e-16
-    ## factor(race2, levels = rev(levels(race2)))other             0.355 0.722406
+    ## as.factor(religpew)99                                     -22.725  < 2e-16
+    ## factor(race2, levels = rev(levels(race2)))other             0.355 0.722404
     ## factor(race2, levels = rev(levels(race2)))native_american  -2.538 0.011149
-    ## factor(race2, levels = rev(levels(race2)))mixed            -1.184 0.236362
-    ## factor(race2, levels = rev(levels(race2)))middle_eastern   -1.283 0.199672
-    ## factor(race2, levels = rev(levels(race2)))latino           -1.453 0.146361
+    ## factor(race2, levels = rev(levels(race2)))mixed            -1.184 0.236359
+    ## factor(race2, levels = rev(levels(race2)))middle_eastern   -1.283 0.199670
+    ## factor(race2, levels = rev(levels(race2)))latino           -1.453 0.146359
     ## factor(race2, levels = rev(levels(race2)))black            -3.755 0.000174
     ## factor(race2, levels = rev(levels(race2)))asian            -3.075 0.002110
-    ## as.factor(CC16_300_2)2                                      2.311 0.020874
+    ## as.factor(CC16_300_2)2                                      2.311 0.020873
     ## as.factor(CC16_300_5)2                                     -4.088 4.39e-05
-    ## as.factor(inputstate)10                                    -0.163 0.870426
+    ## as.factor(inputstate)10                                    -0.163 0.870425
     ## as.factor(inputstate)11                                    -3.059 0.002224
-    ## as.factor(inputstate)12                                    -1.685 0.091996
-    ## as.factor(inputstate)13                                    -1.395 0.163088
+    ## as.factor(inputstate)12                                    -1.685 0.091994
+    ## as.factor(inputstate)13                                    -1.395 0.163086
     ## as.factor(inputstate)16                                     0.104 0.916886
-    ## as.factor(inputstate)17                                    -0.991 0.321880
+    ## as.factor(inputstate)17                                    -0.991 0.321878
     ## as.factor(inputstate)18                                    -0.138 0.890587
-    ## as.factor(inputstate)21                                    -1.311 0.189846
-    ## as.factor(inputstate)22                                    -0.852 0.394119
-    ## as.factor(inputstate)24                                    -0.777 0.437416
-    ## as.factor(inputstate)25                                    -0.900 0.368286
-    ## as.factor(inputstate)26                                     0.612 0.540367
-    ## as.factor(inputstate)28                                    -0.815 0.415190
-    ## as.factor(inputstate)29                                    -0.284 0.776711
-    ## as.factor(inputstate)30                                    -2.006 0.044900
-    ## as.factor(inputstate)31                                    -0.902 0.367266
-    ## as.factor(inputstate)33                                     0.312 0.754948
-    ## as.factor(inputstate)34                                    -1.651 0.098816
-    ## as.factor(inputstate)35                                    -0.120 0.904301
-    ## as.factor(inputstate)36                                    -1.310 0.190209
-    ## as.factor(inputstate)37                                    -1.465 0.142913
-    ## as.factor(inputstate)39                                    -1.749 0.080394
-    ## as.factor(inputstate)4                                     -0.233 0.815752
-    ## as.factor(inputstate)40                                     0.272 0.785996
-    ## as.factor(inputstate)41                                   -14.180  < 2e-16
-    ## as.factor(inputstate)42                                    -0.754 0.451111
-    ## as.factor(inputstate)44                                    -1.565 0.117526
-    ## as.factor(inputstate)45                                    -2.194 0.028251
-    ## as.factor(inputstate)46                                     0.196 0.844541
-    ## as.factor(inputstate)47                                    -0.416 0.677287
-    ## as.factor(inputstate)48                                    -1.284 0.199264
+    ## as.factor(inputstate)21                                    -1.311 0.189844
+    ## as.factor(inputstate)22                                    -0.852 0.394116
+    ## as.factor(inputstate)24                                    -0.777 0.437413
+    ## as.factor(inputstate)25                                    -0.900 0.368284
+    ## as.factor(inputstate)26                                     0.612 0.540365
+    ## as.factor(inputstate)28                                    -0.815 0.415188
+    ## as.factor(inputstate)29                                    -0.284 0.776710
+    ## as.factor(inputstate)30                                    -2.006 0.044899
+    ## as.factor(inputstate)31                                    -0.902 0.367264
+    ## as.factor(inputstate)33                                     0.312 0.754947
+    ## as.factor(inputstate)34                                    -1.651 0.098814
+    ## as.factor(inputstate)35                                    -0.120 0.904300
+    ## as.factor(inputstate)36                                    -1.310 0.190206
+    ## as.factor(inputstate)37                                    -1.465 0.142911
+    ## as.factor(inputstate)39                                    -1.749 0.080393
+    ## as.factor(inputstate)4                                     -0.233 0.815751
+    ## as.factor(inputstate)40                                     0.272 0.785995
+    ## as.factor(inputstate)41                                   -14.184  < 2e-16
+    ## as.factor(inputstate)42                                    -0.754 0.451109
+    ## as.factor(inputstate)44                                    -1.565 0.117524
+    ## as.factor(inputstate)45                                    -2.194 0.028250
+    ## as.factor(inputstate)46                                     0.196 0.844540
+    ## as.factor(inputstate)47                                    -0.416 0.677285
+    ## as.factor(inputstate)48                                    -1.284 0.199262
     ## as.factor(inputstate)5                                     -3.096 0.001969
-    ## as.factor(inputstate)50                                     1.189 0.234400
-    ## as.factor(inputstate)51                                    -1.192 0.233320
-    ## as.factor(inputstate)53                                    -1.111 0.266384
-    ## as.factor(inputstate)54                                    -0.769 0.442165
-    ## as.factor(inputstate)55                                    -0.126 0.899593
-    ## as.factor(inputstate)6                                     -1.199 0.230664
-    ## as.factor(inputstate)8                                    -12.559  < 2e-16
-    ## as.factor(inputstate)9                                      0.094 0.924897
+    ## as.factor(inputstate)50                                     1.189 0.234398
+    ## as.factor(inputstate)51                                    -1.192 0.233317
+    ## as.factor(inputstate)53                                    -1.112 0.266381
+    ## as.factor(inputstate)54                                    -0.769 0.442163
+    ## as.factor(inputstate)55                                    -0.126 0.899592
+    ## as.factor(inputstate)6                                     -1.199 0.230662
+    ## as.factor(inputstate)8                                    -12.572  < 2e-16
+    ## as.factor(inputstate)9                                      0.094 0.924896
     ##                                                              
     ## (Intercept)                                               ** 
     ## as.factor(CC16_351B)2                                     ***
@@ -753,7 +726,7 @@ Running a Logit to precent intelligble coef direction & magnitudes
     ## ---
     ## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
     ## 
-    ## (Dispersion parameter for binomial family taken to be 0.9868461)
+    ## (Dispersion parameter for binomial family taken to be 1.008907)
     ## 
     ## Number of Fisher Scoring iterations: 12
 
@@ -778,7 +751,7 @@ Plot Age to show potentially non-linear changes
 
     ## [1] "Summary Stats:"
 
-    ## [1] "Average TPP Support Among Sanders voters: 0.395"
+    ## [1] "Average TPP Support Among Sanders voters: 0.403"
 
     ## [1] "Average TPP Support Among Clinton voters: 0.65"
 
@@ -787,17 +760,17 @@ Plot Age to show potentially non-linear changes
     ## # A tibble: 4 x 2
     ##   CC16_337_1      n
     ##   <chr>       <dbl>
-    ## 1 1          2266. 
-    ## 2 2          1247. 
-    ## 3 3           386. 
-    ## 4 99           36.5
+    ## 1 1          2509. 
+    ## 2 2          1333. 
+    ## 3 3           425. 
+    ## 4 99           37.1
 
     ## [1] "Military Spending Cuts Pref by Clinton Voters: "
 
     ## # A tibble: 4 x 2
     ##   CC16_337_1      n
     ##   <chr>       <dbl>
-    ## 1 1          2037. 
-    ## 2 2          2074. 
-    ## 3 3           761. 
-    ## 4 99           82.4
+    ## 1 1          2212. 
+    ## 2 2          2255. 
+    ## 3 3           835. 
+    ## 4 99           88.8

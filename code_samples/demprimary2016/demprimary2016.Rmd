@@ -28,9 +28,10 @@ df <- data.table::fread('gunzip -c ~/Downloads/CCES16_Common_OUTPUT_Feb2018_VV.t
 ```
 
 ```{r data_subset, echo=FALSE}
-df1 <- df[df$CC16_328 < 3 & df$CL_E2016PPVM != "" & !is.na(df$CC16_328) & !is.na(df$commonweight_vv_post), ]
+df1 <- df[df$CC16_328 < 3 & df$CL_E2016PPVM != "" & !is.na(df$CC16_328) & !is.na(df$commonweight_vv), ]
 df1$sanders <- ifelse(df1$CC16_328 == 2, 1, 0)
 df1$sanders <- as.factor(df1$sanders)
+print("voted for Sanders (1) or Clinton(0)")
 table(df1$sanders, useNA = 'always')
 ```
 
@@ -294,9 +295,9 @@ set.seed(643)
                       )
 
 # genearte summary stats
-predx <- predict(object=gbm1, df2, type='raw', weight = df1$commonweight_vv_post)
+predx <- predict(object=gbm1, df2, type='raw', weight = df1$commonweight_vv)
 #auc <- roc(ifelse(yvar=="X1",1,0), ifelse(predx=="X1",1,0))
-wroc <- WeightedROC(ifelse(predx=="X1",1,0), ifelse(yvar=="X1",1,0), df1$commonweight_vv_post)
+wroc <- WeightedROC(ifelse(predx=="X1",1,0), ifelse(yvar=="X1",1,0), df1$commonweight_vv)
 wauc <- WeightedAUC(wroc)
 
 # Summarize
