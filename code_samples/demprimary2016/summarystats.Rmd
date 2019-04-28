@@ -1,0 +1,92 @@
+---
+title: '2016 CCESS: Dem Primary'
+author: "Zach Crowell"
+date: "01/01/2019"
+output: github_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r config, include=FALSE}
+library(data.table)
+library(dplyr)
+library(klaR)
+#library(plotrix)
+```
+
+```{r data_load}
+df <- data.table::fread('gunzip -c ~/Downloads/data/cces16/cces16_common_output_feb2018.txt.gz', 
+                        na.strings = c("", "NA", "__NA__"), 
+                        stringsAsFactors = F, data.table = F)
+# Data Source (2018-02-10): https://dataverse.harvard.edu/dataset.xhtml?persistentId=doi%3A10.7910/DVN/GDF6Z0
+```
+
+```{r data_subset, echo=FALSE}
+ df1 <- df[df$CC16_328 %in% c("Bernie Sanders", "Hillary Clinton", "Another Democrat") & df$CL_E2016PPVM != "" & !is.na(df$CC16_328) & !is.na(df$commonweight_vv), ]
+```
+
+```{r new_vars, echo = F}
+# Create New Var
+df1$race2 <- NULL
+df1$race2[df1$race == "White" & (df1$hispanic == "No" | is.na(df1$hispanic))] <- "white"
+df1$race2[df1$race == "Black" & (df1$hispanic == "No" | is.na(df1$hispanic))] <- "black"
+df1$race2[df1$race == "Hispanic" | df1$hispanic == "Yes"] <- "latino"
+df1$race2[df1$race == "Asian" & (df1$hispanic == "No" | is.na(df1$hispanic))] <- "asian"
+df1$race2[df1$race == "Native American" & (df1$hispanic == "No" | is.na(df1$hispanic))] <- "native_american"
+df1$race2[df1$race == "Middle Eastern" & (df1$hispanic == "No" | is.na(df1$hispanic))] <- "middle_eastern"
+df1$race2[df1$race == "Mixed" & (df1$hispanic == "No" | is.na(df1$hispanic))] <- "mixed"
+df1$race2[df1$race == "Other" & (df1$hispanic == "No" | is.na(df1$hispanic))] <- "other"
+
+
+## Binned Age
+df1$age <- (2016-as.numeric(df1$birthyr))
+
+df1$age_binned <- NULL
+df1$age_binned[df1$age < 30] <- "18-29"
+df1$age_binned[df1$age >= 30 & df1$age < 40] <- "30-39"
+df1$age_binned[df1$age >= 40 & df1$age < 50] <- "40-49"
+df1$age_binned[df1$age >= 50 & df1$age < 65] <- "50-64"
+df1$age_binned[df1$age >= 65] <- "65"
+
+```
+
+``` {r stats}
+tb_race <- df1 %>% count(race2, wt = commonweight_vv) %>% as.data.frame(.)
+tb_race$prop <- round(100*(tb_race$n/sum(df1$commonweight_vv)), 1)
+
+tb_gender <-df1 %>% count(gender, wt = commonweight_vv) %>% as.data.frame(.)
+tb_gender$prop <- round(100*(tb_gender$n/sum(df1$commonweight_vv)), 1)
+
+tb_sanders <- df1 %>% count(CC16_328, wt = commonweight_vv) %>% as.data.frame(.)
+tb_sanders$prop <- round(100*(tb_sanders$n/sum(df1$commonweight_vv)), 1)
+
+tb_age <- df1  %>% count(age_binned, wt = commonweight_vv) %>% as.data.frame(.)
+tb_age$prop <- round(100*(tb_age$n/sum(df1$commonweight_vv)), 1)
+
+tb_state <- df1  %>% count(inputstate, wt = commonweight_vv) %>% as.data.frame(.)
+tb_state$prop <- round(100*(tb_state$n/sum(df1$commonweight_vv)), 1)
+
+```
+
+# Plots
+## Plot Age to show potentially non-linear changes
+``` {r cluster, echo = F}
+# Manual Feature Selection: Removing vars that have 
+# too many nulls, redundant, nongeneralizable/national, or post-primary.
+cols <- colnames(df1[, c(77:78, 82, 122:184, 188:189, 193:227, 240:251, 
+                         276:280, 282:285, 287:294, 336:341, 344:360, 469:475, 
+                         478:483,527:530, 548, 564, 566)])
+df2 <- df1[, colnames(df1) %in% cols]
+
+# Remove Free-Form Qs (i.e. character vars)
+df2 <- df2[sapply(df2, function(x) is.character(x))]
+
+df2 <- df2[sapply(df2, function(x) sum(!duplicated(x))) < 14]
+df2[is.na(df2)] <- ""
+
+df2[,1:length(df2)] <- lapply(df2[,1:length(df2)] , factor)
+#Cluster
+cr <-klaR::kmodes(df2, 5, iter.max = 10, weighted = T) #don't use the record ID as a clustering variable!
+```
